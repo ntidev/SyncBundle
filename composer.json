@@ -1,0 +1,31 @@
+{
+    "name" : "nti/sync-bundle",
+    "description" : "Symfony NTISyncBundle",
+    "type" : "symfony-bundle",
+    "authors" : [{
+        "name" : "Benjamin Vison",
+        "email" : "benjamin@syneteksolutions.com"
+    }],
+    "keywords" : [
+        "SyncBundle"
+    ],
+    "license" : [
+        "MIT"
+    ],
+    "require" : {
+        "symfony/serializer": "2.x"
+    },
+    "autoload" : {
+        "psr-0" : {
+            "NTI\\SyncBundle" : ""
+        }
+    },
+    "target-dir" : "NTI/SyncBundle",
+    "repositories" : [{
+    }],
+    "extra" : {
+        "branch-alias" : {
+            "dev-master" : "1.0-dev"
+        }
+    }
+}
