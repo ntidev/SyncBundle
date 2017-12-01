@@ -24,9 +24,9 @@ class SyncDeleteState
     /**
      * @var SyncMapping
      *
-     * @ORM\OneToOne(targetEntity="NTI\SyncBundle\Entity\SyncMapping")
+     * @ORM\ManyToOne(targetEntity="NTI\SyncBundle\Entity\SyncMapping")
      */
-    private $syncMapping;
+    private $mapping;
 
     /**
      * @var integer
@@ -56,18 +56,18 @@ class SyncDeleteState
     /**
      * @return SyncMapping
      */
-    public function getSyncMapping()
+    public function getMapping()
     {
-        return $this->syncMapping;
+        return $this->mapping;
     }
 
     /**
-     * @param SyncMapping $syncMapping
+     * @param SyncMapping $mapping
      * @return SyncDeleteState
      */
-    public function setSyncMapping($syncMapping)
+    public function setMapping($mapping)
     {
-        $this->syncMapping = $syncMapping;
+        $this->mapping = $mapping;
         return $this;
     }
 

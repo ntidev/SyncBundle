@@ -61,6 +61,7 @@ class DoctrineEventSubscriber implements EventSubscriber
 
     public function preRemove(LifecycleEventArgs $args)
     {
+
         $entity = $args->getEntity();
         $class = get_class($entity);
         $id = null;
@@ -68,6 +69,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         if(method_exists($entity, 'getId')) {
             $id = $entity->getId();
         }
+
         $this->syncService->addToDeleteSyncState($class, $id);
     }
 

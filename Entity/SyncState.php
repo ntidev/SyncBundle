@@ -12,6 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class SyncState
 {
+    const REAL_LAST_TIMESTAMP = "_real_last_timestamp";
     /**
      * @var int
      *
@@ -26,7 +27,7 @@ class SyncState
      *
      * @ORM\OneToOne(targetEntity="NTI\SyncBundle\Entity\SyncMapping")
      */
-    private $syncMapping;
+    private $mapping;
 
     /**
      * @var integer
@@ -48,18 +49,18 @@ class SyncState
     /**
      * @return SyncMapping
      */
-    public function getSyncMapping()
+    public function getMapping()
     {
-        return $this->syncMapping;
+        return $this->mapping;
     }
 
     /**
-     * @param mixed $syncMapping
+     * @param SyncMapping $mapping
      * @return SyncState
      */
-    public function setSyncMapping($syncMapping)
+    public function setMapping($mapping)
     {
-        $this->syncMapping = $syncMapping;
+        $this->mapping = $mapping;
         return $this;
     }
 

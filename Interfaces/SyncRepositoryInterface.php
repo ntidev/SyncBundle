@@ -18,7 +18,8 @@ interface SyncRepositoryInterface {
      *
      * @param $timestamp
      * @param ContainerInterface $container
+     * @param array $serializationGroups
      * @return mixed
      */
-    public function findFromTimestamp($timestamp, ContainerInterface $container);
+    public function findFromTimestamp($timestamp, ContainerInterface $container, $serializationGroups = array());
 }

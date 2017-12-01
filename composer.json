@@ -3,7 +3,7 @@
     "description" : "Symfony NTISyncBundle",
     "type" : "symfony-bundle",
     "authors" : [{
-        "name" : "Benjamin Vison",
+        "name" : "Benjamín Visón",
         "email" : "benjamin@syneteksolutions.com"
     }],
     "keywords" : [
@@ -13,7 +13,7 @@
         "MIT"
     ],
     "require" : {
-        "symfony/serializer": "2.x"
+        "symfony/serializer": ">=2.0"
     },
     "autoload" : {
         "psr-0" : {

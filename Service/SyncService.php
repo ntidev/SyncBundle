@@ -2,6 +2,7 @@
 
 namespace NTI\SyncBundle\Service;
 
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use NTI\SyncBundle\Entity\SyncDeleteState;
 use NTI\SyncBundle\Entity\SyncState;
@@ -32,43 +33,48 @@ class SyncService {
     /**
      * Get the list of changes and delete entries since this timestamp
      *
-     * @param $timestamp
+     * @param $mappings
      * @return array
      */
-    public function getFromTimestamp($timestamp) {
-        $states = $this->em->getRepository('NTISyncBundle:SyncState')->findFromTimestamp($timestamp);
-        $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($timestamp);
+    public function getFromMappings($mappings) {
 
         $changes = array();
 
-        /** @var SyncState $state */
-        foreach($states as $state) {
-            $mapping = $state->getSyncMapping();
+        foreach($mappings as $mapping) {
+
+            if(!isset($mapping["timestamp"]) || !isset($mapping["mapping"])) {
+                continue;
+            }
+
+            $timestamp = $mapping["timestamp"];
+            $mappingName = $mapping["mapping"];
+            $serializationGroup = (isset($mapping["serializer"])) ? $mapping["serializer"] : "sync_basic";
+
+            $syncMapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("name" => $mappingName));
+
+            if(!$syncMapping) {
+                continue;
+            }
+
+            $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($mappingName, $timestamp);
 
             /** @var SyncRepositoryInterface $repository */
-            $repository = $this->em->getRepository($mapping->getClass());
+            $repository = $this->em->getRepository($syncMapping->getClass());
             if(!($repository instanceof SyncRepositoryInterface)) {
                 error_log("The repository for the class {$mapping->getClass()} does not implement the SyncRepositoryInterface.");
                 continue;
             }
 
-            $objects = $repository->findFromTimestamp($timestamp, $this->container);
+            $result = $repository->findFromTimestamp($timestamp, $this->container, $serializationGroup);
 
-            if(count($objects) <= 0) {
-                continue;
-            }
-
-            if(!isset($changes[$mapping->getMapName()])) {
-                $changes[$mapping->getMapName()] = array();
-            }
-
-            $changes[$mapping->getMapName()][] = $objects;
+            $changes[$mappingName] = array(
+                'changes' => $result["data"],
+                'deletes' => json_decode($this->container->get('serializer')->serialize($deletes, 'json'), true),
+                SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
+            );
         }
 
-        return array(
-            'changes' => $changes,
-            'deletes' => json_decode($this->container->get('serializer')->serialize($deletes, 'json'), true),
-        );
+        return $changes;
     }
 
     public function updateSyncState($class, $timestamp) {
@@ -77,7 +83,7 @@ class SyncService {
             return;
         }
 
-        $syncState = $this->em->getRepository('NTISyncBundle:SyncState')->findOneBy(array("syncMapping" => $mapping));
+        $syncState = $this->em->getRepository('NTISyncBundle:SyncState')->findOneBy(array("mapping" => $mapping));
 
         if(!$syncState) {
             $syncState = new SyncState();
@@ -103,13 +109,13 @@ class SyncService {
      */
     public function addToDeleteSyncState($class, $id) {
         $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
-
         if(!$mapping) {
             return;
         }
 
+
         $deleteEntry = new SyncDeleteState();
-        $deleteEntry->setSyncMapping($mapping);
+        $deleteEntry->setMapping($mapping);
         $deleteEntry->setClassId($id);
         $deleteEntry->setTimestamp(time());
 

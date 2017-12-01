@@ -24,9 +24,9 @@ class SyncMapping
     /**
      * @var string
      *
-     * @ORM\Column(name="map_name", type="string", length=255, nullable=false, unique=true)
+     * @ORM\Column(name="name", type="string", length=255, nullable=false, unique=true)
      */
-    private $mapName;
+    private $name;
 
     /**
      * @var string
@@ -48,18 +48,18 @@ class SyncMapping
     /**
      * @return string
      */
-    public function getMapName()
+    public function getName()
     {
-        return $this->mapName;
+        return $this->name;
     }
 
     /**
-     * @param string $mapName
+     * @param string $name
      * @return SyncMapping
      */
-    public function setMapName($mapName)
+    public function setName($name)
     {
-        $this->mapName = $mapName;
+        $this->name = $name;
         return $this;
     }
 
