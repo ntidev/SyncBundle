@@ -16,6 +16,14 @@ interface SyncRepositoryInterface {
      * making the request only has access to a portion of the data, this can be handled via the container in this method
      * of the repository.
      *
+     * The resulting structure should be the following:
+     *
+     * array(
+     *      "data" => (array of objects),
+     *      SyncState::REAL_LAST_TIMESTAMP => (last updated_on date from the array of objects),
+     * )
+     *
+     *
      * @param $timestamp
      * @param ContainerInterface $container
      * @param array $serializationGroups
