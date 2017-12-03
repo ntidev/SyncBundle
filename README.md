@@ -5,13 +5,21 @@
 
 Below are a list of things that need to be considered in order to implement this bundle:
 
-1. Entities need to have a method called `getUpdatedOn()` in order for this bundle to work properly. As the name implies, it should return the `\DateTime` of when the 
-object was last updated and cannot be null or `0000-00-00 00:00:00`.
+1. Entities need to have a method called `getUpdatedOn()` in order for this bundle to work properly. As the name implies, it should return the `\DateTime` of when the object was last updated and cannot be null or `0000-00-00 00:00:00`. (You need to handle this UpdatedOn property, for example, by using LifecyclecCallbacks)
 2. Entities to be synced must have a repository implementing the `SyncRepositoryInterface`. (see below for more information)
 3. The mapping (`SyncMapping`) needs to be configured foreach entity as it is the list used as reference for the lookup 
 
 ## Background process
 
+The bundle takes care of tracking the changes made to the entities by using a `DoctrineEventListener` which listenes to the `PreUpdate`, `PrePersist`, and `PreRemove` events. When any of these events is fired on an Entity that contains a `SyncMapping` defined, the bundle will call the `getUpdatedOn()` on this entity and use this value as the last `timtestamp` that the entity in general was updated.
+
+Below is the general process that the bundles goes through to keep track of the synchronization state:
+
+![Synchronization Process - Server](/Images/SynchronizationProcess-Server.PNG?raw=true "Synchronization State Process on the Server")
+
+Below is the general process that occurs when a client asks for the changes after a specific timestamp:
+
+![Synchronization Process - Client](/Images/SynchronizationProcess-Client.PNG?raw=true "Synchronization Process on the Client")
 
 ## Implementation
 
