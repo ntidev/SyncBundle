@@ -1,6 +1,35 @@
 # NTISyncBundle
 
 
+### Installation
+
+1. Install the bundle using composer:
+
+```
+$ composer require ntidev/sync-bundle "dev-master"
+```
+
+
+2. Add the bundle configuration to the AppKernel
+
+
+```
+public function registerBundles()
+{
+    $bundles = array(
+        ...
+        new NTI\SyncBundle\NTISyncBundle(),
+        ...
+    );
+}
+```
+
+3. Update the database schema
+
+```
+$ php app/console doctrine:schema:update
+```
+
 ## Requirements
 
 Below are a list of things that need to be considered in order to implement this bundle:
