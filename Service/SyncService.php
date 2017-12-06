@@ -87,7 +87,7 @@ class SyncService {
 
         if(!$syncState) {
             $syncState = new SyncState();
-            $syncState->setSyncMapping($mapping);
+            $syncState->setMapping($mapping);
             $this->em->persist($syncState);
         }
 
