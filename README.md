@@ -5,30 +5,40 @@
 
 1. Install the bundle using composer:
 
-```
-$ composer require ntidev/sync-bundle "dev-master"
-```
-
+    ```
+    $ composer require ntidev/sync-bundle "dev-master"
+    ```
 
 2. Add the bundle configuration to the AppKernel
 
-
-```
-public function registerBundles()
-{
-    $bundles = array(
-        ...
-        new NTI\SyncBundle\NTISyncBundle(),
-        ...
-    );
-}
-```
+    ```
+    public function registerBundles()
+    {
+        $bundles = array(
+            ...
+            new NTI\SyncBundle\NTISyncBundle(),
+            ...
+        );
+    }
+    ```
 
 3. Update the database schema
 
-```
-$ php app/console doctrine:schema:update
-```
+    ```
+    $ php app/console doctrine:schema:update
+    ```
+
+4. Add the routes to your routing.yml
+
+    ```
+    // routing.yml
+    // ...
+    nti_sync:
+       resource: "@NTISyncBundle/Controller/"
+       type:     annotation
+       prefix:   /
+
+    ```
 
 ## Requirements
 
