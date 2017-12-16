@@ -27,7 +27,7 @@ class SyncService {
      */
     public function __construct(ContainerInterface $container) {
         $this->container = $container;
-        $this->em = $container->get('doctrine')->getManager();
+
     }
 
     /**
@@ -37,6 +37,8 @@ class SyncService {
      * @return array
      */
     public function getFromMappings($mappings) {
+
+        $this->em = $container->get('doctrine')->getManager();
 
         $changes = array();
 
@@ -78,6 +80,9 @@ class SyncService {
     }
 
     public function updateSyncState($class, $timestamp) {
+
+        $this->em = $container->get('doctrine')->getManager();
+
         $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
@@ -108,6 +113,9 @@ class SyncService {
      * @param $id
      */
     public function addToDeleteSyncState($class, $id) {
+
+        $this->em = $container->get('doctrine')->getManager();
+
         $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
