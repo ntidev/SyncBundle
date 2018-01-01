@@ -121,7 +121,6 @@ class SyncService {
             return;
         }
 
-
         $deleteEntry = new SyncDeleteState();
         $deleteEntry->setMapping($mapping);
         $deleteEntry->setClassId($id);
