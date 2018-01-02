@@ -21,9 +21,12 @@ class SyncController extends Controller
      * @Route("/getSummary", name="nti_sync_get_summary")
      */
     public function getChangesSummaryAction(Request $request) {
+
         $em = $this->getDoctrine()->getManager();
+
         $syncStates = $em->getRepository('NTISyncBundle:SyncState')->findBy(array(), array("mapping" => "asc"));
         $syncStatesArray = json_decode($this->get('serializer')->serialize($syncStates, 'json'), true);
+
         return new JsonResponse($syncStatesArray, 200);
     }
 
@@ -57,8 +60,7 @@ class SyncController extends Controller
      */
     public function pushAction(Request $request) {
         $data = json_decode($request->getContent(), true);
-
-
+        $mappings = (isset($data["mappings"])) ? $data["mappings"] : array();
 
     }
 

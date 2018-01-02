@@ -76,6 +76,22 @@ interface SyncRepositoryInterface {
      * flexibility to the repository when making decision on what to show to the client. For example, if the user
      * making the request only has access to a portion of the data, this can be handled via the container in this method
      * of the repository.
+     *
+     * Note 1: If the `updatedOn`  of a child entity is the one that is affected and not the parent, you may have to take that
+     *         into account when doing your queries so that the updated information shows up in the results if desired when doing
+     *         the comparison with the timestamp
+     * 
+     *         For example:
+     *         
+     *              $qb -> ...
+     *              $qb -> leftJoin('a.b', 'b')
+     *              $qb -> andWhere($qb->expr()->orX(
+     *                  $qb->expr()->gte('a.date', $date),
+     *                  $qb->expr()->gte('b.date', $date)
+     *              ))
+     *              ...
+     *              
+     *         This way if the only way of syncronizing B is through A, next time A gets synched B changes will be reflected. 
      * 
      * The resulting structure should be the following:
      * 
