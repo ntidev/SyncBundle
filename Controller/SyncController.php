@@ -2,6 +2,7 @@
 
 namespace NTI\SyncBundle\Controller;
 
+use NTI\SyncBundle\Interfaces\SyncServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -11,7 +12,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 /**
  * Class SyncController
  * @package NTI\SyncBundle\Controller
- * @Route("/nti/sync")
  */
 class SyncController extends Controller
 {
@@ -59,8 +59,39 @@ class SyncController extends Controller
      * @Method("POST")
      */
     public function pushAction(Request $request) {
+
         $data = json_decode($request->getContent(), true);
+
         $mappings = (isset($data["mappings"])) ? $data["mappings"] : array();
+
+        $em = $this->getDoctrine()->getManager();
+
+        foreach($mappings as $entry) {
+
+            if(!isset($entry["mapping"])) {
+
+            }
+
+            $mappingName = $entry["mapping"];
+
+            $mapping = $em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("name" => $mappingName));
+
+            if(!$mapping) {
+
+            }
+
+            $syncClass = $mapping->getSyncService();
+
+            $service = $this->get($syncClass);
+
+            dump(get_class($service));
+            dump($service instanceof SyncServiceInterface);
+
+            $service->sync($entry["data"]);
+
+            die;
+        }
+
 
     }
 

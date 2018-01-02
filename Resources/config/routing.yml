@@ -1,0 +1,4 @@
+nti_sync:
+    resource: '@NTISyncBundle/Controller/'
+    prefix: /nti/sync
+    type: annotation

@@ -36,6 +36,13 @@ class SyncMapping
     private $class;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="sync_service", type="string", length=255, nullable=false, unique=true)
+     */
+    private $syncService;
+
+    /**
      * Get id
      *
      * @return int
@@ -80,5 +87,25 @@ class SyncMapping
         $this->class = $class;
         return $this;
     }
+
+    /**
+     * @return string
+     */
+    public function getSyncService()
+    {
+        return $this->syncService;
+    }
+
+    /**
+     * @param string $syncService
+     * @return SyncMapping
+     */
+    public function setSyncService($syncService)
+    {
+        $this->syncService = $syncService;
+        return $this;
+    }
+
+
 }
 
