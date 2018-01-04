@@ -211,10 +211,10 @@ Below is the general idea over the push/pull process:
 
 ![Synchronization Process - Push/Pull](/Images/SynchronizationProcess-PushPull.PNG?raw=true "Synchronization Push Pull Process")
 
-####Server Side
+###Server Side
 In the `SyncMapping` for each mapped entity a service should be specified. This service must implement the `SyncServiceInterface`. 
 
-####Client Side
+###Client Side
 In order to handle a push from a third party device it must provide the following structure in its request:
  
 ```
