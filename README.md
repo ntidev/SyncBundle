@@ -32,7 +32,7 @@
 
 Below are a list of things that need to be considered in order to implement this bundle:
 
-1. Entities need to have a method called `getlastTimestamp()` in order for this bundle to work properly. As the name implies, it should return the `\DateTime` of when the object was last updated and cannot be null or `0000-00-00 00:00:00`. (You need to handle this lastTimestamp property, for example, by using LifecyclecCallbacks)
+1. Entities need to have a method called `getlastTimestamp()` in order for this bundle to work properly. As the name implies, it should return the `lastTimestamp` of when the object was last updated and cannot be null. (You need to handle this lastTimestamp property, for example, by using LifecyclecCallbacks)
 2. Entities to be synced must have a repository implementing the `SyncRepositoryInterface`. (see below for more information)
 3. The mapping (`SyncMapping`) needs to be configured foreach entity as it is the list used as reference for the lookup 
 
