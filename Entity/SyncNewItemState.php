@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Class SyncNewItemState
  * @package NTI\SyncBundle\Entity
  * @ORM\Table(name="nti_sync_new_item_state")
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass="NTI\SyncBundle\Repository\SyncNewItemStateRepository")
  *
  */
 class SyncNewItemState {

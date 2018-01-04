@@ -28,12 +28,8 @@ class DoctrineEventSubscriber implements EventSubscriber
     public function postPersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if(method_exists($entity, 'getUpdatedOn')) {
-            if($entity->getUpdatedOn() != null) {
-                $timestamp = $entity->getUpdatedOn()->getTimestamp();
-            } else {
-                $timestamp = time();
-            }
+        if(method_exists($entity, 'getLastTimestamp')) {
+            $timestamp = $entity->getLastTimestamp() ?? time();
         } else {
             $timestamp = time();
         }
@@ -45,12 +41,8 @@ class DoctrineEventSubscriber implements EventSubscriber
     public function postUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if(method_exists($entity, 'getUpdatedOn')) {
-            if($entity->getUpdatedOn() != null) {
-                $timestamp = $entity->getUpdatedOn()->getTimestamp();
-            } else {
-                $timestamp = time();
-            }
+        if(method_exists($entity, 'getLastTimestamp')) {
+            $timestamp = $entity->getLastTimestamp() ?? time();
         } else {
             $timestamp = time();
         }

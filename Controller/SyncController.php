@@ -85,12 +85,9 @@ class SyncController extends Controller
 
             $service = $this->get($syncClass);
 
-            dump(get_class($service));
-            dump($service instanceof SyncServiceInterface);
-
             $service->sync($entry["data"]);
 
-            die;
+            return new JsonResponse(array("OK"));
         }
 
 

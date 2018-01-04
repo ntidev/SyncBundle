@@ -59,6 +59,7 @@ class SyncService {
             }
 
             $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($mappingName, $timestamp);
+            $newItems = $this->em->getRepository('NTISyncBundle:SyncNewItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
 
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
@@ -72,6 +73,7 @@ class SyncService {
             $changes[$mappingName] = array(
                 'changes' => $result["data"],
                 'deletes' => json_decode($this->container->get('jms_serializer')->serialize($deletes, 'json'), true),
+                'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
             );
         }
