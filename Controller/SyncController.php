@@ -8,6 +8,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Symfony\Component\Serializer\Serializer;
 
 /**
  * Class SyncController
@@ -25,7 +26,7 @@ class SyncController extends Controller
         $em = $this->getDoctrine()->getManager();
 
         $syncStates = $em->getRepository('NTISyncBundle:SyncState')->findBy(array(), array("mapping" => "asc"));
-        $syncStatesArray = json_decode($this->get('serializer')->serialize($syncStates, 'json'), true);
+        $syncStatesArray = json_decode($this->get("jms_serializer")->serialize($syncStates, 'json'), true);
 
         return new JsonResponse($syncStatesArray, 200);
     }
