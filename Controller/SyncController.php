@@ -67,6 +67,8 @@ class SyncController extends Controller
 
         $em = $this->getDoctrine()->getManager();
 
+        $results = array();
+
         foreach($mappings as $entry) {
 
             if(!isset($entry["mapping"])) {
@@ -85,11 +87,14 @@ class SyncController extends Controller
 
             $service = $this->get($syncClass);
 
-            $service->sync($entry["data"]);
+            $result = $service->sync($entry["data"]);
 
-            return new JsonResponse(array("OK"));
+            $results[$mappingName] = $result;
         }
 
+        return new JsonResponse(array(
+            "mappings" => $results
+        ));
 
     }
 
