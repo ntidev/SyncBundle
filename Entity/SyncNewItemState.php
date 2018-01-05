@@ -26,7 +26,7 @@ class SyncNewItemState {
     /**
      * @var string
      *
-     * @ORM\Column(name="name", type="string", length=255, nullable=false, unique=true)
+     * @ORM\Column(name="uuid", type="string", length=255, nullable=false, unique=true)
      */
     private $uuid;
 
