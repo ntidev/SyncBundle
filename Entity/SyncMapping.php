@@ -38,7 +38,7 @@ class SyncMapping
     /**
      * @var string
      *
-     * @ORM\Column(name="sync_service", type="string", length=255, nullable=false, unique=true)
+     * @ORM\Column(name="sync_service", type="string", length=255, nullable=false)
      */
     private $syncService;
 
