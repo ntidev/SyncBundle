@@ -96,29 +96,6 @@ class SyncController extends Controller
 
             if(!$mapping) { continue; }
 
-            // Create all the SyncNewItemState
-            // Not sure if actually needed
-//            foreach($entry["data"] as $data) {
-//                if(!isset($data["serverId"]) || $data["serverId"] != 0 || !isset($data["id"])) {
-//                    continue;
-//                }
-//
-//                // Look for a SyncNewItemState
-//                $syncNewItemState = $em->getRepository('NTISyncBundle:SyncNewItemState')->findOneBy(array(
-//                   "uuid" => $data["id"],
-//                   "mapping" => $mapping
-//                ));
-//
-//                if(!$syncNewItemState) {
-//                    $syncNewItemState = new SyncNewItemState();
-//                    $syncNewItemState->setUuid($data["id"]);
-//                    $syncNewItemState->setTimestamp(time());
-//                    $syncNewItemState->setMapping($mapping);
-//                    $em->persist($syncNewItemState);
-//                    $em->flush();
-//                }
-//            }
-
             $syncClass = $mapping->getSyncService();
 
             if(!class_exists($syncClass)) { continue; }
@@ -131,18 +108,23 @@ class SyncController extends Controller
             try {
                 $result = $service->sync($entry["data"], $em, $mapping);
             } catch (\Exception $ex) {
+
                 $additionalErrors = array();
+
                 try {
                     $additionalErrors = $service->onSyncException($ex, $this->container);
                     $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : array();
                 } catch (\Exception $ex) {
                     // TBD
                 }
+
                 $result = array(
                     "error" => "An unknown error occurred while processing the synchronization for this mapping",
                     "additional_errors" => $additionalErrors,
                 );
+
                 $results[$mappingName] = $result;
+
                 $em->clear();
                 continue;
             }
