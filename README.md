@@ -6,7 +6,7 @@
 1. Install the bundle using composer:
 
     ```
-    $ composer require ntidev/sync-bundle "dev-master"
+    $ composer require nti/sync-bundle "dev-master"
     ```
 
 2. Add the bundle configuration to the AppKernel
