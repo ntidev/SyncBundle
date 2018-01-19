@@ -29,7 +29,7 @@ class SyncFailedItemStateRepository extends EntityRepository
         $qb->select('item')
             ->from('NTISyncBundle:SyncFailedItemState', 'item')
             ->andWhere(
-                $qb->expr()->eq('binary(item.uuid)', $qb->expr()->literal($id))
+                $qb->expr()->eq('item.uuid', $qb->expr()->literal($id))
             );
 
         try {
