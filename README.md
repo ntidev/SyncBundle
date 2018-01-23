@@ -28,6 +28,14 @@
     $ php app/console doctrine:schema:update
     ```
 
+4.  Add the routes to your `routing.yml`
+
+    ```
+    ...
+    nti_sync:
+        resource: "@NTISyncBundle/Resources/config/routing.yml"
+    ```
+
 ## Requirements
 
 Below are a list of things that need to be considered in order to implement this bundle:
