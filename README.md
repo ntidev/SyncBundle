@@ -6,7 +6,7 @@
 1. Install the bundle using composer:
 
     ```
-    $ composer require ntidev/sync-bundle "dev-master"
+    $ composer require nti/sync-bundle "dev-master"
     ```
 
 2. Add the bundle configuration to the AppKernel
@@ -195,17 +195,34 @@ After receiving the request, if a mapping with the specified name exists, the sy
             },
             ...
         ],
+        "failedItems": [
+            {
+                "id": 7,
+                "uuid": "abcdefg-123456-hifgxyz-78901",
+                "mapping": {
+                    "id": 9,
+                    "name": "Product",
+                    "class": "AppBundle\\Entity\\Product\\Product",
+                    "sync_service": " ... "
+                },
+                "classId": 137,
+                "timestamp": 1512080747,
+                "errors": "{"has_error":true,"additional_errors":null,"code":403,"message":"This inventory report is already closed. Further operations are not allowed.","data":null,"redirect":null}"
+            },
+            ...
+        ],
         "_real_last_timestamp": 1512092445
     }
 }
 
 ```
 
-The server will return the both the `changes` , `newItems`, and the `deletes`. The `changes` will contain the `data` portion of the array returned by
+The server will return the both the `changes` , `newItems`, `failedItems` ,and the `deletes`. The `changes` will contain the `data` portion of the array returned by
 the repository's implementation of `SyncRepositoryInterface`. The `deletes` will contain the list of `SyncDeleteState` that were recorded since the 
 specified timestamp. The `newItems` will contain the list of `SyncNewItemState` which means the new items that were created since the provided timestamp
 including the UUID that was given at the time (This is helpful to third party devices when first pulling the information they can verify if an item was already created
-but they don't have the ID of that item in their local storage and avoid creating duplicates in the server)
+but they don't have the ID of that item in their local storage and avoid creating duplicates in the server). The `failedItems` will contain the list of `SyncFailedItemState`, each item in this list
+contains an `errors` JSON property with the list of errors founds processing the creation or update of the entity. 
 
 The `_real_last_timestamp` should be used as it can help with paginating the results for a full-sync and help the client
 get the real last timestamp of the last object in the response. This has to be obtained in the repository and can be done

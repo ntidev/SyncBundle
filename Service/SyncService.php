@@ -27,7 +27,6 @@ class SyncService {
      */
     public function __construct(ContainerInterface $container) {
         $this->container = $container;
-
     }
 
     /**
@@ -61,6 +60,11 @@ class SyncService {
             $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($mappingName, $timestamp);
             $newItems = $this->em->getRepository('NTISyncBundle:SyncNewItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
 
+            /**
+             * Failed Items Synchronization
+             */
+            $failedItems = $this->em->getRepository('NTISyncBundle:SyncFailedItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
+
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
             if(!($repository instanceof SyncRepositoryInterface)) {
@@ -74,6 +78,7 @@ class SyncService {
                 'changes' => $result["data"],
                 'deletes' => json_decode($this->container->get('jms_serializer')->serialize($deletes, 'json'), true),
                 'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
+                'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
             );
         }
