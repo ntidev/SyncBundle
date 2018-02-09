@@ -3,7 +3,9 @@
 namespace NTI\SyncBundle\EventListener;
 
 use Doctrine\Common\EventSubscriber;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DoctrineEventSubscriber implements EventSubscriber
@@ -19,36 +21,23 @@ class DoctrineEventSubscriber implements EventSubscriber
     public function getSubscribedEvents()
     {
         return array(
-            'postPersist',
-            'postUpdate',
+            'onFlush',
             'preRemove',
         );
     }
 
-    public function postPersist(LifecycleEventArgs $args)
+    public function onFlush(OnFlushEventArgs $args)
     {
-        $entity = $args->getEntity();
-        if(method_exists($entity, 'getLastTimestamp')) {
-            $timestamp = $entity->getLastTimestamp() ?? time();
-        } else {
-            $timestamp = time();
+        $em = $args->getEntityManager();
+        $uow = $em->getUnitOfWork();
+
+        foreach ($uow->getScheduledEntityUpdates() as $keyEntity => $entity) {
+            $this->handleEntityChange($em, $entity);
         }
 
-        $class = get_class($args->getEntity());
-        $this->syncService->updateSyncState($class, $timestamp);
-    }
-
-    public function postUpdate(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
-        if(method_exists($entity, 'getLastTimestamp')) {
-            $timestamp = $entity->getLastTimestamp() ?? time();
-        } else {
-            $timestamp = time();
+        foreach ($uow->getScheduledEntityInsertions() as $keyEntity => $entity) {
+            $this->handleEntityChange($em, $entity);
         }
-
-        $class = get_class($args->getEntity());
-        $this->syncService->updateSyncState($class, $timestamp);
     }
 
     public function preRemove(LifecycleEventArgs $args)
@@ -63,6 +52,16 @@ class DoctrineEventSubscriber implements EventSubscriber
         }
 
         $this->syncService->addToDeleteSyncState($class, $id);
+    }
+
+    private function handleEntityChange(EntityManagerInterface $em, $entity) {
+        if(method_exists($entity, 'getLastTimestamp')) {
+            $timestamp = $entity->getLastTimestamp() ?? time();
+        } else {
+            $timestamp = time();
+        }
+        $class = get_class($entity);
+        $this->syncService->updateSyncState($em, $class, $timestamp);
     }
 
 }
