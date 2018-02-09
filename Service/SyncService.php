@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use NTI\SyncBundle\Entity\SyncDeleteState;
 use NTI\SyncBundle\Entity\SyncMapping;
+use NTI\SyncBundle\Entity\SyncNewItemState;
 use NTI\SyncBundle\Entity\SyncState;
 use NTI\SyncBundle\Interfaces\SyncRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -53,14 +54,14 @@ class SyncService {
             $mappingName = $mapping["mapping"];
             $serializationGroup = (isset($mapping["serializer"])) ? $mapping["serializer"] : "sync_basic";
 
-            $syncMapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("name" => $mappingName));
+            $syncMapping = $this->em->getRepository(SyncMapping::class)->findOneBy(array("name" => $mappingName));
 
             if(!$syncMapping) {
                 continue;
             }
 
-            $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($mappingName, $timestamp);
-            $newItems = $this->em->getRepository('NTISyncBundle:SyncNewItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
+            $deletes = $this->em->getRepository(SyncDeleteState::class)->findFromTimestamp($mappingName, $timestamp);
+            $newItems = $this->em->getRepository(SyncNewItemState::class)->findFromTimestampAndMapping($mappingName, $timestamp);
 
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
@@ -116,7 +117,7 @@ class SyncService {
 
         $this->em = $this->container->get('doctrine')->getManager();
 
-        $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
+        $mapping = $this->em->getRepository(SyncMapping::class)->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
         }
