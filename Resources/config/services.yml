@@ -7,3 +7,4 @@ services:
     nti.sync:
             class: NTI\SyncBundle\Service\SyncService
             arguments: ["@service_container"]
+            public: true

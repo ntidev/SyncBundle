@@ -5,6 +5,8 @@ namespace NTI\SyncBundle\Service;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use NTI\SyncBundle\Entity\SyncDeleteState;
+use NTI\SyncBundle\Entity\SyncMapping;
+use NTI\SyncBundle\Entity\SyncNewItemState;
 use NTI\SyncBundle\Entity\SyncState;
 use NTI\SyncBundle\Interfaces\SyncRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,6 +29,7 @@ class SyncService {
      */
     public function __construct(ContainerInterface $container) {
         $this->container = $container;
+
     }
 
     /**
@@ -51,19 +54,14 @@ class SyncService {
             $mappingName = $mapping["mapping"];
             $serializationGroup = (isset($mapping["serializer"])) ? $mapping["serializer"] : "sync_basic";
 
-            $syncMapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("name" => $mappingName));
+            $syncMapping = $this->em->getRepository(SyncMapping::class)->findOneBy(array("name" => $mappingName));
 
             if(!$syncMapping) {
                 continue;
             }
 
-            $deletes = $this->em->getRepository('NTISyncBundle:SyncDeleteState')->findFromTimestamp($mappingName, $timestamp);
-            $newItems = $this->em->getRepository('NTISyncBundle:SyncNewItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
-
-            /**
-             * Failed Items Synchronization
-             */
-            $failedItems = $this->em->getRepository('NTISyncBundle:SyncFailedItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
+            $deletes = $this->em->getRepository(SyncDeleteState::class)->findFromTimestamp($mappingName, $timestamp);
+            $newItems = $this->em->getRepository(SyncNewItemState::class)->findFromTimestampAndMapping($mappingName, $timestamp);
 
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
@@ -78,7 +76,6 @@ class SyncService {
                 'changes' => $result["data"],
                 'deletes' => json_decode($this->container->get('jms_serializer')->serialize($deletes, 'json'), true),
                 'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
-                'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
             );
         }
@@ -86,31 +83,28 @@ class SyncService {
         return $changes;
     }
 
-    public function updateSyncState($class, $timestamp) {
+    public function updateSyncState(EntityManagerInterface $em, $class, $timestamp) {
 
-        $this->em = $this->container->get('doctrine')->getManager();
-
-        $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
+        $mapping = $em->getRepository(SyncMapping::class)->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
         }
 
-        $syncState = $this->em->getRepository('NTISyncBundle:SyncState')->findOneBy(array("mapping" => $mapping));
+        $syncState = $em->getRepository(SyncState::class)->findOneBy(array("mapping" => $mapping));
+
+        $uow = $em->getUnitOfWork();
 
         if(!$syncState) {
             $syncState = new SyncState();
             $syncState->setMapping($mapping);
-            $this->em->persist($syncState);
+            $syncState->setTimestamp($timestamp);
+            $em->persist($syncState);
+            $uow->computeChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+        } else {
+            $syncState->setTimestamp($timestamp);
+            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
         }
 
-        $syncState->setTimestamp($timestamp);
-
-        try {
-            $this->em->flush();
-        } catch (\Exception $ex) {
-            error_log("Unable to register sync state change for object: " . $class);
-            error_log($ex->getMessage());
-        }
     }
 
     /**
@@ -123,7 +117,7 @@ class SyncService {
 
         $this->em = $this->container->get('doctrine')->getManager();
 
-        $mapping = $this->em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("class" => $class));
+        $mapping = $this->em->getRepository(SyncMapping::class)->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
         }

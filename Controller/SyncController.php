@@ -98,8 +98,6 @@ class SyncController extends Controller
 
             $syncClass = $mapping->getSyncService();
 
-            #if(!class_exists($syncClass)) { continue; }
-
             /** @var SyncServiceInterface $service */
             $service = $this->get($syncClass);
 
