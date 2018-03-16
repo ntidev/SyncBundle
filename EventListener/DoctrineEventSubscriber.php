@@ -32,6 +32,13 @@ class DoctrineEventSubscriber implements EventSubscriber
         $uow = $em->getUnitOfWork();
 
         foreach ($uow->getScheduledEntityUpdates() as $keyEntity => $entity) {
+
+            $changes = $uow->getEntityChangeSet($entity);
+
+            if(count($changes) == 1 && isset($changes["lastTimestamp"])) {
+                $uow->detach($entity);
+                continue;
+            }
             $this->handleEntityChange($em, $entity);
         }
 
