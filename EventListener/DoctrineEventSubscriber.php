@@ -36,7 +36,8 @@ class DoctrineEventSubscriber implements EventSubscriber
             $changes = $uow->getEntityChangeSet($entity);
 
             if(count($changes) == 1 && isset($changes["lastTimestamp"])) {
-                $uow->detach($entity);
+                $oid = spl_object_hash($entity);
+                $uow->clearEntityChangeSet($oid);
                 continue;
             }
             $this->handleEntityChange($em, $entity);
