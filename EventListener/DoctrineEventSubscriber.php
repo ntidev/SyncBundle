@@ -26,19 +26,54 @@ class DoctrineEventSubscriber implements EventSubscriber
         );
     }
 
+    public function getChangedOids($entities, &$oids) {
+
+        foreach($entities as $entity) {
+
+            $reflection = new \ReflectionObject($entity);
+            $methods = $reflection->getMethods();
+
+            foreach($methods as $method) {
+
+                // Getter must not have a parameter!!
+                if(strpos($method->getName(), "get") !== false && count($method->getParameters()) <= 0) {
+                    $result = $method->invoke($entity);
+                    if(is_object($result)) {
+                        $reflection2 = new \ReflectionClass(get_class($result));
+                        $annotations = $reflection2->getDocComment();
+                        if(strpos($annotations, '@ORM\Entity') !== false) {
+                            $oid = spl_object_hash($result);
+                            if(method_exists($result, 'setLastTimestamp')) {
+                                $oids[] = $oid;
+                            }
+                            $this->getChangedOids(array($result), $oids);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public function onFlush(OnFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
+
+        $oids = array();
+        $this->getChangedOids($uow->getScheduledEntityUpdates(), $oids);
+
         foreach ($uow->getScheduledEntityUpdates() as $keyEntity => $entity) {
 
             $changes = $uow->getEntityChangeSet($entity);
 
-            if(count($changes) == 1 && isset($changes["lastTimestamp"])) {
+            if (count($changes) == 1 && isset($changes["lastTimestamp"])) {
                 $oid = spl_object_hash($entity);
-                $uow->clearEntityChangeSet($oid);
-                continue;
+                if(!in_array($oid, $oids)) {
+//                    dump(get_class($entity)." is not really chaning anything...");
+                    $uow->clearEntityChangeSet($oid);
+                    continue;
+                }
             }
             $this->handleEntityChange($em, $entity);
         }
@@ -46,11 +81,13 @@ class DoctrineEventSubscriber implements EventSubscriber
         foreach ($uow->getScheduledEntityInsertions() as $keyEntity => $entity) {
             $this->handleEntityChange($em, $entity);
         }
+//
+//        dump($oids);
+//        dump("Finished");
+//        die;
     }
 
-    public function preRemove(LifecycleEventArgs $args)
-    {
-
+    public function preRemove(LifecycleEventArgs $args) {
         $entity = $args->getEntity();
         $class = get_class($entity);
         $id = null;
@@ -71,5 +108,6 @@ class DoctrineEventSubscriber implements EventSubscriber
         $class = get_class($entity);
         $this->syncService->updateSyncState($em, $class, $timestamp);
     }
+
 
 }
