@@ -25,7 +25,7 @@ class DoctrineEventSubscriber implements EventSubscriber
             'preRemove',
         );
     }
-    
+
     public function onFlush(OnFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
@@ -34,6 +34,10 @@ class DoctrineEventSubscriber implements EventSubscriber
         $somethingChanged = false;
 
         $identityMap = $uow->getIdentityMap();
+
+        // ehhehehehee LOL
+        $deletedEntities = count($uow->getScheduledEntityDeletions()) > 0;
+        $insertedEntities = count($uow->getScheduledEntityInsertions()) > 0;
 
         foreach($identityMap as $map) {
             foreach($map as $object) {
@@ -48,6 +52,9 @@ class DoctrineEventSubscriber implements EventSubscriber
                 break;
             }
         }
+
+        if($deletedEntities || $insertedEntities)
+            $somethingChanged = true;
 
         foreach ($uow->getScheduledEntityUpdates() as $keyEntity => $entity) {
             $changes = $uow->getEntityChangeSet($entity);
