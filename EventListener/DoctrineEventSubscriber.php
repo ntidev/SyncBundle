@@ -42,7 +42,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         foreach($identityMap as $map) {
             foreach($map as $object) {
                 $changes = $uow->getEntityChangeSet($object);
-                if(count($changes) > 1 || (count($changes) > 0 && !isset($changes["lastTimestamp"]) && !isset($changes["lastLogin"])) {
+                if(count($changes) > 1 || (count($changes) > 0 && !isset($changes["lastTimestamp"]) && !isset($changes["lastLogin"]))) {
                     $somethingChanged = true;
                     break;
                 }
