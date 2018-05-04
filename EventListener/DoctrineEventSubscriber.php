@@ -42,7 +42,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         foreach($identityMap as $map) {
             foreach($map as $object) {
                 $changes = $uow->getEntityChangeSet($object);
-                if(count($changes) > 1 || (count($changes) > 0 && !isset($changes["lastTimestamp"]))) {
+                if(count($changes) > 1 || (count($changes) > 0 && !isset($changes["lastTimestamp"]) && !isset($changes["lastLogin"]))) {
                     $somethingChanged = true;
                     break;
                 }
@@ -59,7 +59,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         foreach ($uow->getScheduledEntityUpdates() as $keyEntity => $entity) {
             $changes = $uow->getEntityChangeSet($entity);
 
-            if(count($changes) == 1 && isset($changes["lastTimestamp"]) && !$somethingChanged) {
+            if(count($changes) == 1 && isset($changes["lastTimestamp"]) && !isset($changes["lastLogin"]) && !$somethingChanged) {
                 $oid = spl_object_hash($entity);
                 $uow->clearEntityChangeSet($oid);
             } else {
