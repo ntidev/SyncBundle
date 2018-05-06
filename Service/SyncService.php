@@ -80,7 +80,7 @@ class SyncService {
                 'changes' => $result["data"],
                 'deletes' => json_decode($this->container->get('jms_serializer')->serialize($deletes, 'json'), true),
                 'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
-		'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
+		        'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
             );
         }
