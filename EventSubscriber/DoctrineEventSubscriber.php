@@ -110,8 +110,6 @@ class DoctrineEventSubscriber implements EventSubscriber
             if (null !== ($annotation = $annotationReader->getPropertyAnnotation($property, SyncParent::class))) {
                 $getter = $annotation->getter;
                 $parent = $entity->$getter();
-                dump($parent);
-                die;
                 // Using ClassUtils as $parent is actually a Proxy of the class
                 $reflrectionParent = new \ReflectionClass(ClassUtils::getClass($parent));
                 $syncParentAnnotation = $annotationReader->getClassAnnotation($reflrectionParent, SyncEntity::class);
