@@ -84,7 +84,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         $timestamp = time();
 
         // Update the mapping's sync state if exists
-        $mapping = $em->getRepository(SyncMapping::class)->findOneBy(array("class" => get_class($entity)));
+        $mapping = $em->getRepository(SyncMapping::class)->findOneBy(array("class" => ClassUtils::getClass($entity)));
         if($mapping) {
             $syncState = $em->getRepository(SyncState::class)->findOneBy(array("mapping" => $mapping));
             if(!$syncState) {
@@ -99,7 +99,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         // Check if this class itself has a lastTimestamp
         if(method_exists($entity, 'setLastTimestamp')) {
             $entity->setLastTimestamp($timestamp);
-            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(get_class($entity)), $entity);
+            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
         }
 
         // Notify relationships
