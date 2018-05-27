@@ -108,5 +108,7 @@ class SyncService {
         $deleteEntry->setTimestamp(time());
 
         $this->em->persist($deleteEntry);
+        $uow = $this->em->getUnitOfWork();
+        $uow->computeChangeSet($this->em->getClassMetadata(SyncDeleteState::class), $deleteEntry);
     }
 }
