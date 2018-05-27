@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\PersistentCollection;
+use Doctrine\ORM\UnitOfWork;
 use NTI\SyncBundle\Annotations\SyncEntity;
 use NTI\SyncBundle\Annotations\SyncParent;
 use NTI\SyncBundle\Entity\SyncMapping;
@@ -93,13 +94,17 @@ class DoctrineEventSubscriber implements EventSubscriber
                 $em->persist($syncState);
             }
             $syncState->setTimestamp($timestamp);
-            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+            if($uow->getEntityState($syncState) == UnitOfWork::STATE_MANAGED) {
+                $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+            }
         }
 
         // Check if this class itself has a lastTimestamp
         if(method_exists($entity, 'setLastTimestamp')) {
             $entity->setLastTimestamp($timestamp);
-            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
+            if($uow->getEntityState($entity) == UnitOfWork::STATE_MANAGED) {
+                $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
+            }
         }
 
         // Notify relationships
