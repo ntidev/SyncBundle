@@ -49,8 +49,9 @@ class DoctrineEventSubscriber implements EventSubscriber
         }
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
-            $this->processEntity($em, $entity);
+            $this->processEntity($em, $entity, true);
             $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->getId());
+
         }
 
         /** @var PersistentCollection $collectionUpdate */
@@ -63,14 +64,14 @@ class DoctrineEventSubscriber implements EventSubscriber
         /** @var PersistentCollection $collectionDeletion */
         foreach($uow->getScheduledCollectionDeletions() as $collectionDeletion) {
             foreach($collectionDeletion as $entity) {
-                $this->processEntity($em, $entity);
+                $this->processEntity($em, $entity, true);
                 $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->getId());
             }
         }
 
     }
 
-    private function processEntity(EntityManagerInterface $em, $entity)
+    private function processEntity(EntityManagerInterface $em, $entity, $deleting = false)
     {
 
         $reflection = new \ReflectionClass(ClassUtils::getClass($entity));
@@ -100,11 +101,9 @@ class DoctrineEventSubscriber implements EventSubscriber
         }
 
         // Check if this class itself has a lastTimestamp
-        if(method_exists($entity, 'setLastTimestamp')) {
+        if(!$deleting && method_exists($entity, 'setLastTimestamp')) {
             $entity->setLastTimestamp($timestamp);
-            if($uow->getEntityState($entity) == UnitOfWork::STATE_MANAGED) {
-                $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
-            }
+            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
         }
 
         // Notify relationships
