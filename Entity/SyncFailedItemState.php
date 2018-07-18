@@ -54,7 +54,7 @@ class SyncFailedItemState {
     /**
      * @var string
      *
-     * @ORM\Column(name="errors", columnDefinition="TEXT", length=65535, nullable=true)
+     * @ORM\Column(name="errors", type="text", nullable=true)
      */
     private $errors;
 

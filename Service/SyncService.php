@@ -5,6 +5,7 @@ namespace NTI\SyncBundle\Service;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use NTI\SyncBundle\Entity\SyncDeleteState;
+use NTI\SyncBundle\Entity\SyncFailedItemState;
 use NTI\SyncBundle\Entity\SyncMapping;
 use NTI\SyncBundle\Entity\SyncNewItemState;
 use NTI\SyncBundle\Entity\SyncState;
@@ -62,10 +63,7 @@ class SyncService {
 
             $deletes = $this->em->getRepository(SyncDeleteState::class)->findFromTimestamp($mappingName, $timestamp);
             $newItems = $this->em->getRepository(SyncNewItemState::class)->findFromTimestampAndMapping($mappingName, $timestamp);
-	    /**
-             * Failed Items Synchronization
-             */
-            $failedItems = $this->em->getRepository('NTISyncBundle:SyncFailedItemState')->findFromTimestampAndMapping($mappingName, $timestamp);
+            $failedItems = $this->em->getRepository(SyncFailedItemState::class)->findFromTimestampAndMapping($mappingName, $timestamp);
 
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
@@ -80,36 +78,12 @@ class SyncService {
                 'changes' => $result["data"],
                 'deletes' => json_decode($this->container->get('jms_serializer')->serialize($deletes, 'json'), true),
                 'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
-		'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
+		        'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
             );
         }
 
         return $changes;
-    }
-
-    public function updateSyncState(EntityManagerInterface $em, $class, $timestamp) {
-
-        $mapping = $em->getRepository(SyncMapping::class)->findOneBy(array("class" => $class));
-        if(!$mapping) {
-            return;
-        }
-
-        $syncState = $em->getRepository(SyncState::class)->findOneBy(array("mapping" => $mapping));
-
-        $uow = $em->getUnitOfWork();
-
-        if(!$syncState) {
-            $syncState = new SyncState();
-            $syncState->setMapping($mapping);
-            $syncState->setTimestamp($timestamp);
-            $em->persist($syncState);
-            $uow->computeChangeSet($em->getClassMetadata(SyncState::class), $syncState);
-        } else {
-            $syncState->setTimestamp($timestamp);
-            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
-        }
-
     }
 
     /**
@@ -122,6 +96,7 @@ class SyncService {
 
         $this->em = $this->container->get('doctrine')->getManager();
 
+        /** @var SyncMapping $mapping */
         $mapping = $this->em->getRepository(SyncMapping::class)->findOneBy(array("class" => $class));
         if(!$mapping) {
             return;
@@ -133,12 +108,7 @@ class SyncService {
         $deleteEntry->setTimestamp(time());
 
         $this->em->persist($deleteEntry);
-
-        try {
-            $this->em->flush();
-        } catch (\Exception $ex) {
-            error_log("Unable to register deletion of object: " . $class . " with ID " . $id);
-            error_log($ex->getMessage());
-        }
+        $uow = $this->em->getUnitOfWork();
+        $uow->computeChangeSet($this->em->getClassMetadata(SyncDeleteState::class), $deleteEntry);
     }
 }
