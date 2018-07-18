@@ -40,14 +40,100 @@
 
 Below are a list of things that need to be considered in order to implement this bundle:
 
-1. Entities need to have a method called `getlastTimestamp()` in order for this bundle to work properly. As the name implies, it should return the `lastTimestamp` of when the object was last updated and cannot be null. (You need to handle this lastTimestamp property, for example, by using LifecyclecCallbacks)
-2. Entities to be synced must have a repository implementing the `SyncRepositoryInterface`. (see below for more information)
-3. The mapping (`SyncMapping`) needs to be configured foreach entity as it is the list used as reference for the lookup 
+1. Any Entity that needs to be taken into account during the synchronization process must have the `@NTI\SyncEntity` annotation at the class level.
+2. `ManyToOne` relationships that should alter the last synchronization timestamp of their parents should use the annotation `@NTI\SyncParent(getter="[Getter Name]")` (see example below for more information).
+3. Entities to be synced must have a repository implementing the `SyncRepositoryInterface` (see below for more information).
+4. The mapping `SyncMapping` needs to be configured foreach entity as it is the list used as reference for the lookup.
+5. If the entity is going to be synched FROM the client, then a service must be defined in the `SyncMapping` database entry. Also, this method needs to implement the interface `SyncServiceInterface`. 
 
-## Background process
+## Tracking Changes
 
-The bundle takes care of tracking the changes made to the entities by using a `DoctrineEventListener` which listenes to the `PreUpdate`, `PrePersist`, and `PreRemove` events. When any of these events is fired on an Entity that contains a `SyncMapping` defined, the bundle will call the `getlastTimestamp()` on this entity and use this value as the last `timtestamp` that the entity in general was updated.
+The way that the bundle tracks changes in the synchronization is as follows:
 
+1. The bundle has a `DoctrineEventListener` listening to the `onFlush` event.
+2. Once the event is fired, the bundle will grab every entitty that has the `@NTI\SyncEntity` annotation.
+3. If the entity has a `SyncMapping` defined, the system will update the `last_timestamp` field of this mapping to the current `time()`.
+4. If the entity has a method called `setLastTimestamp()` it will be called with the `time()` as a parameter and the changes will be recomputed or computed.
+5. All the properties of the entity will be examined in search for a property that contains the annotation `@NTI\SyncParent(getter="[Getter Name]")`.
+   If found, the getter will be called, if the result is an object that also has the `@NTI\SyncEntity`, it will be processed again starting from point #3. This process occurrs recursively.
+  
+## Class Examples
+
+    ```
+    <?php
+    
+    ...
+    use NTI\Annotations as NTI;    
+    
+    /**
+     * ...
+     * @NTI\SyncEntity()
+     */
+    public class Product {
+        ...        
+        
+        /**
+         * @ORM\Column(name="last_timestamp", type="bigint", options={"default": 0})
+         */
+        private $lastTimestamp;
+        
+        ...
+        
+        /**
+         * Set lastTimestamp
+         * @param $lastTimestamp
+         * @return Company
+         */
+        public function setLastTimestamp($lastTimestamp)
+        {
+            $this->lastTimestamp = $lastTimestamp;    
+            return $this;
+        }
+    
+        /**
+         * Get lastTimestamp
+         * @return integer
+         */
+        public function getLastTimestamp()
+        {
+            return $this->lastTimestamp;
+        }
+
+    }    
+    
+An example of a class using a `ManyToOne` where the child also needs the parent's `last_timestamp` to be updated can be defined as:
+
+    ```
+    <?php
+    
+    ...
+    use NTI\Annotations as NTI;    
+    
+    /**
+     * ...
+     * @NTI\SyncEntity()
+     */
+    public class ProductChild {
+        ...        
+                
+        /**
+         * @NTI\SyncParent(getter="getProduct")
+         * @ORM\ManyToOne(targetEntity="AppBundle\Entity\Product\Product")
+         */
+        private $product;
+        
+        ...
+            
+        /**
+         * Get Product
+         * @return Product
+         */
+        public function getProduct()
+        {
+            return $this->product;
+        }
+    }          
+  
 Below is the general process that the bundles goes through to keep track of the synchronization state:
 
 ![Synchronization Process - Server](/Images/SynchronizationProcess-Server.PNG?raw=true "Synchronization State Process on the Server")
@@ -111,7 +197,7 @@ Besides implementing the interface, in the database `nti_sync_mapping` the mappi
 First, the idea is to get a summary of the changes and mappings from the server:
 
 ```
-GET /nti/sync/getSummary
+GET /nti/sync/summary
 ```
 
 To which the server will respond with the following structure:
@@ -146,7 +232,6 @@ Content-Type: application/json
     ]
 }
 ```
-Note: This request can also be done using a query and GET instead.
 
 After receiving the request, if a mapping with the specified name exists, the system will call the repository's findFromTimestamp implementation and return the following result (Using a Product entity as an example):
 
@@ -207,7 +292,7 @@ After receiving the request, if a mapping with the specified name exists, the sy
                 },
                 "classId": 137,
                 "timestamp": 1512080747,
-                "errors": "{"has_error":true,"additional_errors":null,"code":403,"message":"This inventory report is already closed. Further operations are not allowed.","data":null,"redirect":null}"
+                "errors": [...errors provided...]
             },
             ...
         ],
@@ -217,16 +302,16 @@ After receiving the request, if a mapping with the specified name exists, the sy
 
 ```
 
-The server will return the both the `changes` , `newItems`, `failedItems` ,and the `deletes`. The `changes` will contain the `data` portion of the array returned by
+The server will return the both the `changes` , `newItems`, `failedItems` , and the `deletes`. The `changes` will contain the `data` portion of the array returned by
 the repository's implementation of `SyncRepositoryInterface`. The `deletes` will contain the list of `SyncDeleteState` that were recorded since the 
 specified timestamp. The `newItems` will contain the list of `SyncNewItemState` which means the new items that were created since the provided timestamp
 including the UUID that was given at the time (This is helpful to third party devices when first pulling the information they can verify if an item was already created
 but they don't have the ID of that item in their local storage and avoid creating duplicates in the server). The `failedItems` will contain the list of `SyncFailedItemState`, each item in this list
-contains an `errors` JSON property with the list of errors founds processing the creation or update of the entity. 
+contains an `errors` property with the errors founds processing the creation or update of the entity. 
 
 The `_real_last_timestamp` should be used as it can help with paginating the results for a full-sync and help the client
 get the real last timestamp of the last object in the response. This has to be obtained in the repository and can be done
-by simply looping through the array of objects and getting the latest updatedOn.
+by simply getting the last item from the repository's result and calling the `getLastTimestamp()`.
 
 From this point on, the client must keep a track of the `_real_last_timestamp` in order to perform a sync in the future.
 
@@ -236,10 +321,10 @@ Below is the general idea over the push/pull process:
 
 ![Synchronization Process - Push/Pull](/Images/SynchronizationProcess-PushPull.PNG?raw=true "Synchronization Push Pull Process")
 
-###Server Side
+### Server Side
 In the `SyncMapping` for each mapped entity a service should be specified. This service must implement the `SyncServiceInterface`. 
 
-###Client Side
+### Client Side
 In order to handle a push from a third party device it must provide the following structure in its request:
  
 ```
@@ -277,9 +362,7 @@ The server then returns the following structure:
 }
 ```
 
-
-
-
 ## Todo
 
 * Handle deletes from third parties
+* `ManyToMany` relationships are tricky and can lead to performance issues 
