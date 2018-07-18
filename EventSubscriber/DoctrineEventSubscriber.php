@@ -96,7 +96,11 @@ class DoctrineEventSubscriber implements EventSubscriber
             }
             $syncState->setTimestamp($timestamp);
             if($uow->getEntityState($syncState) == UnitOfWork::STATE_MANAGED) {
-                $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+                if($syncState->getId()) {
+                    $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+                } else {
+                    $uow->computeChangeSet($em->getClassMetadata(SyncState::class), $syncState);
+                }                
             }
         }
 
