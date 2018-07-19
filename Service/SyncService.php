@@ -68,7 +68,7 @@ class SyncService {
             /** @var SyncRepositoryInterface $repository */
             $repository = $this->em->getRepository($syncMapping->getClass());
             if(!($repository instanceof SyncRepositoryInterface)) {
-                error_log("The repository for the class {$mapping->getClass()} does not implement the SyncRepositoryInterface.");
+                error_log("The repository for the class {$syncMapping->getClass()} does not implement the SyncRepositoryInterface.");
                 continue;
             }
 
