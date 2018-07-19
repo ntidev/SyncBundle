@@ -44,7 +44,10 @@ Below are a list of things that need to be considered in order to implement this
 2. `ManyToOne` relationships that should alter the last synchronization timestamp of their parents should use the annotation `@NTI\SyncParent(getter="[Getter Name]")` (see example below for more information).
 3. Entities to be synced must have a repository implementing the `SyncRepositoryInterface` (see below for more information).
 4. The mapping `SyncMapping` needs to be configured foreach entity as it is the list used as reference for the lookup.
-5. If the entity is going to be synched FROM the client, then a service must be defined in the `SyncMapping` database entry. Also, this method needs to implement the interface `SyncServiceInterface`. 
+5. The `SyncState` should be created for each mapping. This can be done with this query after creating all the `SyncMapping`:
+    ```
+    `INSERT INTO nti_sync_mapping(mapping_id, timestamp) SELECT id, 0  FROM sync_nti_mapping;`
+6. If the entity is going to be synched FROM the client, then a service must be defined in the `SyncMapping` database entry. Also, this method needs to implement the interface `SyncServiceInterface`. 
 
 ## Tracking Changes
 
