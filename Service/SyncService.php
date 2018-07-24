@@ -80,6 +80,7 @@ class SyncService {
                 'newItems' => json_decode($this->container->get('jms_serializer')->serialize($newItems, 'json'), true),
 		        'failedItems' => json_decode($this->container->get('jms_serializer')->serialize($failedItems, 'json'), true),
                 SyncState::REAL_LAST_TIMESTAMP => $result[SyncState::REAL_LAST_TIMESTAMP],
+                SyncState::TOTAL_COUNT => $result[SyncState::TOTAL_COUNT],
             );
         }
 
