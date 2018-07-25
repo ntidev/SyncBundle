@@ -52,9 +52,11 @@ class SyncController extends Controller
             $mappings = (isset($data["mappings"])) ? $data["mappings"] : array();
         }
 
-        $changes = $this->get('nti.sync')->getFromMappings($mappings);
+        $resultData = $this->get('nti.sync')->getFromMappings($mappings);
 
-        return new JsonResponse($changes, 200);
+        $resultData = json_decode($this->container->get('jms_serializer')->serialize($resultData, 'json'), true);
+
+        return new JsonResponse($resultData, 200);
     }
 
     /**
