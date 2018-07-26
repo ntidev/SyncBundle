@@ -27,29 +27,29 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
         $qb->andWhere($qb->expr()->gte('i.lastTimestamp', $timestamp));
         $qb->orderBy('i.lastTimestamp', 'asc');
 
+        // Total records
+        $totalCountQb = clone $qb;
+        $totalCountQb->select('COUNT(i.id)');
+        $totalCountQuery = $totalCountQb->getQuery();
+        try {
+            $difference = ( intval($totalCountQuery->getSingleScalarResult()) - ($page * $limit));
+            $difference >= 0 ?  $totalCount = $difference : $totalCount = 0 ;
+        } catch (\Exception $e) {
+            $totalCount = 0;
+        }
+
         /**
          * This should be set BEFORE getting the total count, that way the client will receive
          * the actual items that are left for it to sync, not the total amount from a timestamp.
          * @Ref the "page"parameter in SyncPulLRequestData
          */
         $qb->setFirstResult($page * $limit);
-
-        // Total records
-        $totalCountQb = clone $qb;
-        $totalCountQb->select('COUNT(i.id)');
-        $totalCountQuery = $totalCountQb->getQuery();
-
-        try {
-            $totalCount = intval($totalCountQuery->getSingleScalarResult());
-        } catch (\Exception $e) {
-            $totalCount = 0;
-        }
-
         $qb->setMaxResults($limit);
 
         $items = $qb->getQuery()->getResult();
 
-        $realLastTimestamp = count($items) <= 0 ? $timestamp : $items[count($items) - 1]->getLastTimestamp();
+        $lastItem = end($items);
+        $realLastTimestamp = $lastItem ? $lastItem->getLastTimestamp() : $timestamp;
 
         $itemsArray = json_decode($container->get('jms_serializer')->serialize($items, 'json', SerializationContext::create()->setGroups($serializationGroups)), true);
 
