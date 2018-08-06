@@ -26,6 +26,9 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
         $qb = $this->createQueryBuilder('i');
         $qb->andWhere($qb->expr()->gte('i.lastTimestamp', $timestamp));
         $qb->orderBy('i.lastTimestamp', 'asc');
+        
+        // If all the timestamp are the same, the ORDER BY last_timestamp will break the LIMIT always returning the same results
+        $qb->addOrderBy('i.id', 'asc');
 
         // Total records
         $totalCountQb = clone $qb;
@@ -38,11 +41,6 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
             $totalCount = 0;
         }
 
-        /**
-         * This should be set BEFORE getting the total count, that way the client will receive
-         * the actual items that are left for it to sync, not the total amount from a timestamp.
-         * @Ref the "page"parameter in SyncPulLRequestData
-         */
         $qb->setFirstResult($page * $limit);
         $qb->setMaxResults($limit);
 
