@@ -29,9 +29,9 @@ class SyncDeleteState
     private $mapping;
 
     /**
-     * @var integer
+     * @var string
      *
-     * @ORM\Column(name="class_id", type="integer", nullable=false)
+     * @ORM\Column(name="class_id", type="string", nullable=false)
      */
     private $classId;
 
@@ -72,7 +72,7 @@ class SyncDeleteState
     }
 
     /**
-     * @return int
+     * @return string
      */
     public function getClassId()
     {
@@ -80,7 +80,7 @@ class SyncDeleteState
     }
 
     /**
-     * @param int $classId
+     * @param string $classId
      * @return SyncDeleteState
      */
     public function setClassId($classId)

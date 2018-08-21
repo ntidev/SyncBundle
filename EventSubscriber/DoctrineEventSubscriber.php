@@ -36,7 +36,6 @@ class DoctrineEventSubscriber implements EventSubscriber
 
     public function onFlush(OnFlushEventArgs $args)
     {
-
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
@@ -50,7 +49,8 @@ class DoctrineEventSubscriber implements EventSubscriber
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
             $this->processEntity($em, $entity, true);
-            $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->getId());
+            $getIdentifier = $this->container->getParameter('nti.sync.deletes.identifier_getter');
+            $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->$getIdentifier());
 
         }
 
@@ -65,7 +65,8 @@ class DoctrineEventSubscriber implements EventSubscriber
         foreach($uow->getScheduledCollectionDeletions() as $collectionDeletion) {
             foreach($collectionDeletion as $entity) {
                 $this->processEntity($em, $entity, true);
-                $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->getId());
+                $getIdentifier = $this->container->getParameter('nti.sync.deletes.identifier_getter');
+                $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->$getIdentifier());
             }
         }
 
