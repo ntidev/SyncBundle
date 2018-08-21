@@ -60,6 +60,20 @@ The way that the bundle tracks changes in the synchronization is as follows:
 5. All the properties of the entity will be examined in search for a property that contains the annotation `@NTI\SyncParent(getter="[Getter Name]")`.
    If found, the getter will be called, if the result is an object that also has the `@NTI\SyncEntity`, it will be processed again starting from point #3. This process occurrs recursively.
   
+## Configuration
+
+Below is the default configuration for the bundle. In case you need to modify the defaults this would go in your `config.yml`:
+
+```yaml
+nti_sync:
+  deletes:
+      
+    # Identifier to use when an item gets deleted. This would go in your `deletes` section as shown below
+    identifier_getter: "getId"
+        
+
+```
+
 ## Class Examples
 
     ```
@@ -278,7 +292,7 @@ After receiving the request, if a mapping with the specified name exists, the sy
                     "name": "Product",
                     "class": "AppBundle\\Entity\\Product\\Product"
                 },
-                "classId": 137,
+                "classId": "[identifier_getter result]",
                 "timestamp": 1512080746
             },
             ...
