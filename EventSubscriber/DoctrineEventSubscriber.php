@@ -47,11 +47,7 @@ class DoctrineEventSubscriber implements EventSubscriber
             $this->processEntity($em, $entity);
         }
 
-
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
-            if($entity == null) {
-                return;
-            }
             $this->processEntity($em, $entity, true);
             $getIdentifier = $this->container->getParameter('nti.sync.deletes.identifier_getter');
             $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->$getIdentifier());
@@ -68,7 +64,7 @@ class DoctrineEventSubscriber implements EventSubscriber
         /** @var PersistentCollection $collectionDeletion */
         foreach($uow->getScheduledCollectionDeletions() as $collectionDeletion) {
             foreach($collectionDeletion as $entity) {
-                if($entity == null) {
+                if(!is_object($entity)) {
                     return;
                 }
                 $this->processEntity($em, $entity, true);
@@ -81,9 +77,10 @@ class DoctrineEventSubscriber implements EventSubscriber
 
     private function processEntity(EntityManagerInterface $em, $entity, $deleting = false)
     {
-        if($entity == null) {
+        if(!is_object($entity)) {
             return;
         }
+
         $reflection = new \ReflectionClass(ClassUtils::getClass($entity));
         $annotationReader = new AnnotationReader();
         $syncEntityAnnotation = $annotationReader->getClassAnnotation($reflection, SyncEntity::class);
