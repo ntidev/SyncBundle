@@ -51,8 +51,8 @@ class DoctrineEventSubscriber implements EventSubscriber
             $this->processEntity($em, $entity, true);
             $getIdentifier = $this->container->getParameter('nti.sync.deletes.identifier_getter');
             $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->$getIdentifier());
-
         }
+
 
         /** @var PersistentCollection $collectionUpdate */
         foreach ($uow->getScheduledCollectionUpdates() as $collectionUpdate) {
@@ -64,6 +64,9 @@ class DoctrineEventSubscriber implements EventSubscriber
         /** @var PersistentCollection $collectionDeletion */
         foreach($uow->getScheduledCollectionDeletions() as $collectionDeletion) {
             foreach($collectionDeletion as $entity) {
+                if(!is_object($entity)) {
+                    return;
+                }
                 $this->processEntity($em, $entity, true);
                 $getIdentifier = $this->container->getParameter('nti.sync.deletes.identifier_getter');
                 $this->container->get('nti.sync')->addToDeleteSyncState(ClassUtils::getClass($entity), $entity->$getIdentifier());
@@ -74,6 +77,9 @@ class DoctrineEventSubscriber implements EventSubscriber
 
     private function processEntity(EntityManagerInterface $em, $entity, $deleting = false)
     {
+        if(!is_object($entity)) {
+            return;
+        }
 
         $reflection = new \ReflectionClass(ClassUtils::getClass($entity));
         $annotationReader = new AnnotationReader();
@@ -101,24 +107,31 @@ class DoctrineEventSubscriber implements EventSubscriber
                     $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(SyncState::class), $syncState);
                 } else {
                     $uow->computeChangeSet($em->getClassMetadata(SyncState::class), $syncState);
-                }                
+                }
             }
         }
 
         // Check if this class itself has a lastTimestamp
         if(!$deleting && method_exists($entity, 'setLastTimestamp')) {
             $entity->setLastTimestamp($timestamp);
-            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
+            if($uow->getEntityState($entity) == UnitOfWork::STATE_MANAGED) {
+                $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(ClassUtils::getClass($entity)), $entity);
+            }
         }
 
         // Notify relationships
         /** @var \ReflectionProperty $property */
         foreach ($reflection->getProperties() as $property) {
-
+            if($property == null) {
+                continue;
+            }
             /** @var SyncParent $annotation */
             if (null !== ($annotation = $annotationReader->getPropertyAnnotation($property, SyncParent::class))) {
                 $getter = $annotation->getter;
                 $parent = $entity->$getter();
+                if($parent == null) {
+                    continue;
+                }
                 // Using ClassUtils as $parent is actually a Proxy of the class
                 $reflrectionParent = new \ReflectionClass(ClassUtils::getClass($parent));
                 $syncParentAnnotation = $annotationReader->getClassAnnotation($reflrectionParent, SyncEntity::class);

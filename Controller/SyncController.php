@@ -109,12 +109,14 @@ class SyncController extends Controller
                 $result = $service->sync($entry["data"], $em, $mapping);
             } catch (\Exception $ex) {
 
+
                 $additionalErrors = array();
 
                 try {
                     $additionalErrors = $service->onSyncException($ex, $this->container);
                     $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : array();
                 } catch (\Exception $ex) {
+
                     // TBD
                 }
 
