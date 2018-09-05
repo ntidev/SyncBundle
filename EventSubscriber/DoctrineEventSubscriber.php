@@ -11,6 +11,7 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\UnitOfWork;
 use NTI\SyncBundle\Annotations\SyncEntity;
+use NTI\SyncBundle\Annotations\SyncIgnore;
 use NTI\SyncBundle\Annotations\SyncParent;
 use NTI\SyncBundle\Entity\SyncMapping;
 use NTI\SyncBundle\Entity\SyncState;
@@ -123,6 +124,9 @@ class DoctrineEventSubscriber implements EventSubscriber
         /** @var \ReflectionProperty $property */
         foreach ($reflection->getProperties() as $property) {
             if($property == null) {
+                continue;
+            }
+            if (null !== ($annotation = $annotationReader->getPropertyAnnotation($property, SyncIgnore::class))) {
                 continue;
             }
             /** @var SyncParent $annotation */
