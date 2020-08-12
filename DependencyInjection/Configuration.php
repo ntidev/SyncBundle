@@ -24,6 +24,14 @@ class Configuration implements ConfigurationInterface
             $rootNode = $treeBuilder->root('nti_sync');
         }
 
+        $rootNode
+        ->children()
+            ->arrayNode('deletes')
+                ->children()
+                    ->scalarNode("identifier_getter")->defaultValue("getId")->end()
+                ->end()
+            ->end()
+        ->end();
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.

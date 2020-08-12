@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 class SyncState
 {
     const REAL_LAST_TIMESTAMP = "_real_last_timestamp";
+    const TOTAL_COUNT = "_total_count";
     /**
      * @var int
      *
