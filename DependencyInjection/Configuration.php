@@ -17,8 +17,14 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('nti_sync')
+        $treeBuilder = new TreeBuilder('nti_sync');
+        if (method_exists($treeBuilder, 'getRootNode')) {
+            $rootNode = $treeBuilder->getRootNode();
+        } else {
+            $rootNode = $treeBuilder->root('nti_sync');
+        }
+
+        $rootNode
         ->children()
             ->arrayNode('deletes')
                 ->children()
@@ -26,8 +32,6 @@ class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ->end();
-
-
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.
