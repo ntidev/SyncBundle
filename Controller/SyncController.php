@@ -5,51 +5,46 @@ namespace NTI\SyncBundle\Controller;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMException;
-use NTI\SyncBundle\Entity\SyncNewItemState;
 use NTI\SyncBundle\Interfaces\SyncServiceInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Component\Serializer\Serializer;
 
 /**
- * Class SyncController
- * @package NTI\SyncBundle\Controller
+ * Class SyncController.
  */
-class SyncController extends Controller
+class SyncController extends AbstractController
 {
     /**
-     * @param Request $request
      * @return JsonResponse
      * @Route("/summary", name="nti_sync_get_summary")
      */
-    public function getChangesSummaryAction(Request $request) {
-
+    public function getChangesSummaryAction(Request $request)
+    {
         $em = $this->getDoctrine()->getManager();
 
-        $syncStates = $em->getRepository('NTISyncBundle:SyncState')->findBy(array(), array("mapping" => "asc"));
-        $syncStatesArray = json_decode($this->get("jms_serializer")->serialize($syncStates, 'json'), true);
+        $syncStates = $em->getRepository('NTISyncBundle:SyncState')->findBy([], ['mapping' => 'asc']);
+        $syncStatesArray = json_decode($this->get('jms_serializer')->serialize($syncStates, 'json'), true);
 
         return new JsonResponse($syncStatesArray, 200);
     }
 
     /**
-     * @param Request $request
      * @return JsonResponse
      * @Route("/pull", name="nti_sync_pull")
      * @Method("GET|POST")
      */
-    public function pullAction(Request $request) {
+    public function pullAction(Request $request)
+    {
+        $mappings = [];
 
-        $mappings = array();
-
-        if($request->getMethod() == "GET") {
-            $mappings = ($request->get('mappings') && is_array($request->get('mappings'))) ? $request->get('mappings') : array();
-        } elseif ($request->getMethod() == "POST") {
+        if ('GET' == $request->getMethod()) {
+            $mappings = ($request->get('mappings') && is_array($request->get('mappings'))) ? $request->get('mappings') : [];
+        } elseif ('POST' == $request->getMethod()) {
             $data = json_decode($request->getContent(), true);
-            $mappings = (isset($data["mappings"])) ? $data["mappings"] : array();
+            $mappings = (isset($data['mappings'])) ? $data['mappings'] : [];
         }
 
         $resultData = $this->get('nti.sync')->getFromMappings($mappings);
@@ -60,24 +55,22 @@ class SyncController extends Controller
     }
 
     /**
-     * @param Request $request
      * @return JsonResponse
      * @Route("/push", name="nti_sync_push", methods="POST")
      * @Method("POST")
      */
-    public function pushAction(Request $request) {
-
+    public function pushAction(Request $request)
+    {
         $data = json_decode($request->getContent(), true);
 
-        $mappings = (isset($data["mappings"])) ? $data["mappings"] : array();
+        $mappings = (isset($data['mappings'])) ? $data['mappings'] : [];
 
         /** @var EntityManagerInterface $em */
         $em = $this->getDoctrine()->getManager();
 
-        $results = array();
+        $results = [];
 
-        foreach($mappings as $entry) {
-
+        foreach ($mappings as $entry) {
             if (!$em->isOpen()) {
                 try {
                     $em = EntityManager::create(
@@ -86,17 +79,21 @@ class SyncController extends Controller
                         $em->getEventManager()
                     );
                 } catch (ORMException $e) {
-                    return new JsonResponse(array("error" => "An unknown error occurred while reopening the database connection."), 500);
+                    return new JsonResponse(['error' => 'An unknown error occurred while reopening the database connection.'], 500);
                 }
             }
 
-            if(!isset($entry["mapping"]) || !isset($entry["data"])) { continue; }
+            if (!isset($entry['mapping']) || !isset($entry['data'])) {
+                continue;
+            }
 
-            $mappingName = $entry["mapping"];
+            $mappingName = $entry['mapping'];
 
-            $mapping = $em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(array("name" => $mappingName));
+            $mapping = $em->getRepository('NTISyncBundle:SyncMapping')->findOneBy(['name' => $mappingName]);
 
-            if(!$mapping) { continue; }
+            if (!$mapping) {
+                continue;
+            }
 
             $syncClass = $mapping->getSyncService();
 
@@ -106,28 +103,26 @@ class SyncController extends Controller
             $em->beginTransaction();
 
             try {
-                $result = $service->sync($entry["data"], $em, $mapping);
+                $result = $service->sync($entry['data'], $em, $mapping);
             } catch (\Exception $ex) {
-
-
-                $additionalErrors = array();
+                $additionalErrors = [];
 
                 try {
                     $additionalErrors = $service->onSyncException($ex, $this->container);
-                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : array();
+                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : [];
                 } catch (\Exception $ex) {
-
                     // TBD
                 }
 
-                $result = array(
-                    "error" => "An unknown error occurred while processing the synchronization for this mapping",
-                    "additional_errors" => $additionalErrors,
-                );
+                $result = [
+                    'error' => 'An unknown error occurred while processing the synchronization for this mapping',
+                    'additional_errors' => $additionalErrors,
+                ];
 
                 $results[$mappingName] = $result;
 
                 $em->clear();
+
                 continue;
             }
 
@@ -138,28 +133,26 @@ class SyncController extends Controller
             } catch (\Exception $ex) {
                 $em->rollback();
 
-                $additionalErrors = array();
+                $additionalErrors = [];
+
                 try {
                     $additionalErrors = $service->onSyncException($ex, $this->container);
-                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : array();
+                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : [];
                 } catch (\Exception $ex) {
                     // TBD
                 }
 
-                $result = array(
-                    "error" => "An unknown error occurred while processing the synchronization for this mapping",
-                    "additional_errors" => $additionalErrors,
-                );
+                $result = [
+                    'error' => 'An unknown error occurred while processing the synchronization for this mapping',
+                    'additional_errors' => $additionalErrors,
+                ];
 
                 $results[$mappingName] = $result;
             }
-
         }
 
-        return new JsonResponse(array(
-            "mappings" => $results
-        ));
-
+        return new JsonResponse([
+            'mappings' => $results,
+        ]);
     }
-
 }

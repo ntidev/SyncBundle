@@ -2,18 +2,17 @@
 
 namespace NTI\SyncBundle\Repository;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use JMS\Serializer\SerializationContext;
+use NTI\SyncBundle\Interfaces\SyncRepositoryInterface;
 use NTI\SyncBundle\Models\SyncPullRequestData;
 use NTI\SyncBundle\Models\SyncPullResponseData;
-use NTI\SyncBundle\Entity\SyncState;
-use NTI\SyncBundle\Interfaces\SyncRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class SyncRepository extends EntityRepository  implements SyncRepositoryInterface {
-
+class SyncRepository extends ServiceEntityRepository implements SyncRepositoryInterface
+{
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function findFromTimestamp(ContainerInterface $container, SyncPullRequestData $requestData)
     {
@@ -26,7 +25,7 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
         $qb = $this->createQueryBuilder('i');
         $qb->andWhere($qb->expr()->gte('i.lastTimestamp', $timestamp));
         $qb->orderBy('i.lastTimestamp', 'asc');
-        
+
         // If all the timestamp are the same, the ORDER BY last_timestamp will break the LIMIT always returning the same results
         $qb->addOrderBy('i.id', 'asc');
 
@@ -34,9 +33,10 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
         $totalCountQb = clone $qb;
         $totalCountQb->select('COUNT(i.id)');
         $totalCountQuery = $totalCountQb->getQuery();
+
         try {
-            $difference = ( intval($totalCountQuery->getSingleScalarResult()) - ($page * $limit));
-            $difference >= 0 ?  $totalCount = $difference : $totalCount = 0 ;
+            $difference = (intval($totalCountQuery->getSingleScalarResult()) - ($page * $limit));
+            $difference >= 0 ? $totalCount = $difference : $totalCount = 0;
         } catch (\Exception $e) {
             $totalCount = 0;
         }
@@ -58,5 +58,4 @@ class SyncRepository extends EntityRepository  implements SyncRepositoryInterfac
 
         return $result;
     }
-
 }
