@@ -17,39 +17,28 @@ use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use NTI\SyncBundle\Entity\SyncMapping;
 use NTI\SyncBundle\Service\SyncService;
+use NTI\SyncBundle\Service\PushService;
 use NTI\SyncBundle\Repository\SyncMappingRepository;
-use Api\Services\Synchronization\InventoryReport\InventoryReportSyncService;
-use Api\Services\Synchronization\Company\CompanySyncService;
-use Api\Services\Synchronization\Contact\ContactSyncService;
 
 /**
  * Class SyncController.
  */
 class SyncController extends AbstractController
 {
-//    private $em;
-    protected $container2;
     private $syncStateRepository;
     private $syncMappingRepository;
     private $serializer;
     private $syncService;
-    private $inventoryReportSyncService;
-    private $companySyncService;
-    private $contactSyncService;
+    private $pushService;
 
     public function __construct(SyncStateRepository        $syncStateRepository, SyncMappingRepository $syncMappingRepository,
-                                SerializerInterface        $serializer, SyncService $syncService,
-                                InventoryReportSyncService $inventoryReportSyncService, CompanySyncService $companySyncService,
-                                ContactSyncService $contactSyncService, ContainerInterface $container2)
+                                SerializerInterface        $serializer, SyncService $syncService, PushService $pushService)
     {
         $this->syncStateRepository = $syncStateRepository;
         $this->syncMappingRepository = $syncMappingRepository;
         $this->serializer = $serializer;
         $this->syncService = $syncService;
-        $this->inventoryReportSyncService = $inventoryReportSyncService;
-        $this->companySyncService = $companySyncService;
-        $this->contactSyncService = $contactSyncService;
-        $this->container2 = $container2;
+        $this->pushService = $pushService;
     }
 
     /**
@@ -94,113 +83,12 @@ class SyncController extends AbstractController
      */
     public function pushAction(Request $request)
     {
-        $data = json_decode($request->getContent(), true);
-
-        $mappings = (isset($data['mappings'])) ? $data['mappings'] : [];
-
-        /** @var EntityManagerInterface $em */
-        $em = $this->getDoctrine()->getManager();
-
-        $results = [];
-
-        foreach ($mappings as $entry) {
-            if (!$em->isOpen()) {
-                try {
-                    $em = EntityManager::create(
-                        $em->getConnection(),
-                        $em->getConfiguration(),
-                        $em->getEventManager()
-                    );
-                } catch (ORMException $e) {
-                    return new JsonResponse(['error' => 'An unknown error occurred while reopening the database connection.'], 500);
-                }
-            }
-
-            if (!isset($entry['mapping']) || !isset($entry['data'])) {
-                continue;
-            }
-
-            $mappingName = $entry['mapping'];
-
-            /** @var SyncMapping $mapping */
-            $mapping = $this->syncMappingRepository->findOneBy(['name' => $mappingName]);
-
-            if (!$mapping) {
-                continue;
-            }
-
-            $service = '';
-            if ($mapping->getName() === 'Inventory_Report') {
-                $service = $this->inventoryReportSyncService;
-            }
-            if ($mapping->getName() === 'Company') {
-                $service = $this->companySyncService;
-            }
-            if ($mapping->getName() === 'Contact') {
-                $service = $this->contactSyncService;
-            }
-
-            if ($service == '') {
-                return new JsonResponse(['error' => 'Service not found. Please inlude the service directly to the bundle in the SyncController Class.'], 400);
-            }
-
-            // $syncClass = $mapping->getSyncService();
-             /** @var SyncServiceInterface $service */
-            // $service = $this->get($syncClass);
-
-            $em->beginTransaction();
-
-            try {
-                $result = $service->sync($entry['data'], $em, $mapping);
-            } catch (\Exception $ex) {
-                $additionalErrors = [];
-
-                try {
-                    $additionalErrors = $service->onSyncException($ex, $this->container2);
-                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : [];
-                } catch (\Exception $ex) {
-                    // TBD
-                }
-
-                $result = [
-                    'error' => 'An unknown error occurred while processing the synchronization for this mapping',
-                    'additional_errors' => $additionalErrors,
-                ];
-
-                $results[$mappingName] = $result;
-
-                $em->clear();
-
-                continue;
-            }
-
-            try {
-                $em->flush();
-                $em->commit();
-                $results[$mappingName] = $result;
-            } catch (\Exception $ex) {
-                $em->rollback();
-
-                $additionalErrors = [];
-
-                try {
-                    $additionalErrors = $service->onSyncException($ex, $this->container2);
-                    $additionalErrors = (is_array($additionalErrors)) ? $additionalErrors : [];
-                } catch (\Exception $ex) {
-                    // TBD
-                }
-
-                $result = [
-                    'error' => 'An unknown error occurred while processing the synchronization for this mapping',
-                    'additional_errors' => $additionalErrors,
-                ];
-
-                $results[$mappingName] = $result;
-            }
+        try {
+            $data = json_decode($request->getContent(), true);
+            $result = $this->pushService->push($data);
+            return new JsonResponse($result, 200);
+        } catch (\Exception $e) {
+            return new JsonResponse($e->getMessage(), 500);
         }
-
-        return new JsonResponse([
-            'mappings' => $results,
-        ]);
     }
 }
