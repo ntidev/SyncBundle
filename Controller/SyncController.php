@@ -6,8 +6,6 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMException;
 use NTI\SyncBundle\Interfaces\SyncServiceInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +17,7 @@ use NTI\SyncBundle\Entity\SyncMapping;
 use NTI\SyncBundle\Service\SyncService;
 use NTI\SyncBundle\Service\PushService;
 use NTI\SyncBundle\Repository\SyncMappingRepository;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Class SyncController.
@@ -55,8 +54,7 @@ class SyncController extends AbstractController
 
     /**
      * @return JsonResponse
-     * @Route("/pull", name="nti_sync_pull")
-     * @Method("GET|POST")
+     * @Route("/pull", name="nti_sync_pull", methods={"GET|POST"})
      */
     public function pullAction(Request $request)
     {
@@ -79,7 +77,6 @@ class SyncController extends AbstractController
     /**
      * @return JsonResponse
      * @Route("/push", name="nti_sync_push", methods="POST")
-     * @Method("POST")
      */
     public function pushAction(Request $request)
     {
