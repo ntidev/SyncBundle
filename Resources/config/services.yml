@@ -8,3 +8,8 @@ services:
             class: NTI\SyncBundle\Service\SyncService
             arguments: ["@service_container"]
             public: true
+
+    nti.push:
+            class: NTI\SyncBundle\Service\PushService
+            arguments: [ "@service_container" ]
+            public: true
