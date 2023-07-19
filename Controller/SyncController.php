@@ -83,7 +83,9 @@ class SyncController extends AbstractController
         try {
             $data = json_decode($request->getContent(), true);
             $result = $this->pushService->push($data);
-            return new JsonResponse($result, 200);
+            return new JsonResponse(array(
+                "mappings" => $result
+            ), 200);
         } catch (\Exception $e) {
             return new JsonResponse($e->getMessage(), 500);
         }
